@@ -1,9 +1,9 @@
 {
 	"schemaVersion": 1,
-	"id": "modid",
+	"id": "lpcminigame",
 	"version": "${version}",
-	"name": "Example mod",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "LPCMiniGame",
+	"description": "Le_Petit_C's mini-game mod",
 	"authors": [
 		"Me!"
 	],
@@ -12,20 +12,20 @@
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/modid/icon.png",
+	"icon": "assets/lpcminigame/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.example.ExampleMod"
+			"lpcminigame.Main"
 		],
 		"client": [
-			"com.example.ExampleModClient"
+			"lpcminigame.client.ClientMain"
 		]
 	},
 	"mixins": [
-		"modid.mixins.json",
+		"lpcminigame.mixins.json",
 		{
-			"config": "modid.client.mixins.json",
+			"config": "lpcminigame.client.mixins.json",
 			"environment": "client"
 		}
 	],
