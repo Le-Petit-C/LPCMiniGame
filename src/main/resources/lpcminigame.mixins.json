@@ -3,7 +3,7 @@
 	"package": "lpcminigame.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"ExampleMixin"
+		"ServerPlayerInteractionManagerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
