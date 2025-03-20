@@ -11,6 +11,7 @@ public interface IGameMain {
     default void onServerInitialize(){}
     default void startGame(MinecraftServer server){}
     default void stopGame(MinecraftServer server){}
+    default void clearData(MinecraftServer server){}
     default Path getDataDir(MinecraftServer server){
         return server.getSavePath(WorldSavePath.ROOT).resolve(Main.MOD_ID).resolve(getGameId());
     }

@@ -12,6 +12,8 @@ import net.minecraft.util.shape.VoxelShape;
 
 import java.util.HashSet;
 
+import static lpcminigame.util.StringUtils.*;
+
 public class OnServerEndTick implements ServerTickEvents.EndTick{
     DieOnNaturalBlocks game;
     OnServerEndTick(DieOnNaturalBlocks game){
@@ -19,10 +21,12 @@ public class OnServerEndTick implements ServerTickEvents.EndTick{
     }
     @Override public void onEndTick(MinecraftServer server) {
         for(ServerPlayerEntity player : server.getPlayerManager().getPlayerList()){
+            if(player.isDead()) continue;
             if(player.isCreative()) continue;
             if(player.isSpectator()) continue;
             Vec3d eyePos = player.getEyePos();
-            HashSet<BlockPos> set = game.safeBlocks.get(player.getWorld());
+            String worldStringId = getWorldStringId(player.getWorld());
+            HashSet<BlockPos> set = game.safeBlocks.computeIfAbsent(worldStringId, k -> new HashSet<>());
             for (BlockPos pos : BlockPos.iterate(
                     BlockPos.ofFloored(eyePos.getX() - 6, eyePos.getY() - 6, eyePos.getZ() - 6),
                     BlockPos.ofFloored(eyePos.getX() + 6, eyePos.getY() + 6, eyePos.getZ() + 6))){
@@ -40,7 +44,9 @@ public class OnServerEndTick implements ServerTickEvents.EndTick{
         }
     }
     private boolean testPlayerWithBox(ServerPlayerEntity player, Box playerBox){
-        HashSet<BlockPos> set = game.safeBlocks.get(player.getWorld());
+        String worldStringId = getWorldStringId(player.getWorld());
+        HashSet<BlockPos> set = game.safeBlocks.get(worldStringId);
+        if(set == null) return false;
         for (BlockPos pos : BlockPos.iterate(
                 BlockPos.ofFloored(playerBox.minX, playerBox.minY, playerBox.minZ),
                 BlockPos.ofFloored(playerBox.maxX, playerBox.maxY, playerBox.maxZ))) {

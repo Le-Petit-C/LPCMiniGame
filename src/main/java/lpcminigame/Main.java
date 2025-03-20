@@ -64,8 +64,8 @@ public class Main implements ModInitializer, ServerLifecycleEvents.ServerStoppin
 		@Override
 		public void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment) {
 			StringArgumentType arg = StringArgumentType.word();
-			RequiredArgumentBuilder<ServerCommandSource, String> argument2 = CommandManager.argument("start/stop", arg);
-			argument2.suggests(new StringCollectionCommandSuggestionProvider(List.of("start", "stop")));
+			RequiredArgumentBuilder<ServerCommandSource, String> argument2 = CommandManager.argument("option", arg);
+			argument2.suggests(new StringCollectionCommandSuggestionProvider(List.of("start", "stop", "clear")));
 			argument2.executes(this);
 			RequiredArgumentBuilder<ServerCommandSource, String> argument1 = CommandManager.argument("gameId", arg);
 			argument1.suggests(new StringCollectionCommandSuggestionProvider(gameIds));
@@ -81,20 +81,29 @@ public class Main implements ModInitializer, ServerLifecycleEvents.ServerStoppin
 			String gameId = StringArgumentType.getString(context, "gameId");
 			IGameMain game = gameIdToGame.get(gameId);
 			if(game == null) throw new CommandSyntaxException(null, ()->"No matching game");
-			String startOrStop = StringArgumentType.getString(context, "start/stop");
-			if(startOrStop.equals("start")){
-				if(game.isGameStarted()) throw new CommandSyntaxException(null, ()-> "Game " + game.getGameId() + " already started");
-				game.startGame(context.getSource().getServer());
-				context.getSource().sendFeedback(() -> Text.literal("Game " + game.getGameId() + " starts"), true);
-				return 1;
-			}
-			if(startOrStop.equals("stop")){
-				if(!game.isGameStarted()) throw new CommandSyntaxException(null, ()-> "Game " + game.getGameId() + " is not started");
-				game.stopGame(context.getSource().getServer());
-				context.getSource().sendFeedback(() -> Text.literal("Game " + game.getGameId() + " stops"), true);
-				return 1;
-			}
-			throw new CommandSyntaxException(null, ()-> "Argument 2 should be \"start\" or \"stop\" but not \"" + startOrStop +"\"");
+			String option = StringArgumentType.getString(context, "option");
+            switch (option) {
+                case "start" -> {
+                    if (game.isGameStarted())
+                        throw new CommandSyntaxException(null, () -> "Game " + game.getGameId() + " already started");
+                    game.startGame(context.getSource().getServer());
+                    context.getSource().sendFeedback(() -> Text.literal("Game " + game.getGameId() + " starts"), true);
+                    return 1;
+                }
+                case "stop" -> {
+                    if (!game.isGameStarted())
+                        throw new CommandSyntaxException(null, () -> "Game " + game.getGameId() + " is not started");
+                    game.stopGame(context.getSource().getServer());
+                    context.getSource().sendFeedback(() -> Text.literal("Game " + game.getGameId() + " stops"), true);
+                    return 1;
+                }
+                case "clear" -> {
+                    game.clearData(context.getSource().getServer());
+                    context.getSource().sendFeedback(() -> Text.literal("Cleared game " + game.getGameId() + " data"), true);
+                    return 1;
+                }
+				default -> throw new CommandSyntaxException(null, ()-> "Argument 2 should be \"start\" or \"stop\" but not \"" + option +"\"");
+            }
 		}
 	}
 }
