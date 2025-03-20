@@ -1,23 +1,21 @@
 package lpcminigame.events;
 
-import net.fabricmc.fabric.api.event.Event;
-import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public interface PlayerPlaceBlockCallback{
-    Event<PlayerPlaceBlockCallback> EVENT = EventFactory.createArrayBacked(PlayerPlaceBlockCallback.class,
-        (listeners) -> (world, pos, player) -> {
-            for (PlayerPlaceBlockCallback listener : listeners) {
-                ActionResult result = listener.interact(world, pos, player);
-                if(result != ActionResult.PASS) {
-                    return result;
+    UnregistrableEventEx<PlayerPlaceBlockCallback> EVENT = new UnregistrableEventEx<>(
+            null,
+            (world, pos, player)->{
+                for(PlayerPlaceBlockCallback event : PlayerPlaceBlockCallback.EVENT){
+                    ActionResult result = event.interact(world, pos, player);
+                    if(result != ActionResult.PASS) return result;
                 }
+                return ActionResult.PASS;
             }
-            return ActionResult.PASS;
-        });
+            );
 
     ActionResult interact(World world, BlockPos pos, PlayerEntity player);
 

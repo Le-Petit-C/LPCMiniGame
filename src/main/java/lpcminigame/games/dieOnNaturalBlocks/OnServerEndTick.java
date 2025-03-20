@@ -19,6 +19,8 @@ public class OnServerEndTick implements ServerTickEvents.EndTick{
     }
     @Override public void onEndTick(MinecraftServer server) {
         for(ServerPlayerEntity player : server.getPlayerManager().getPlayerList()){
+            if(player.isCreative()) continue;
+            if(player.isSpectator()) continue;
             Vec3d eyePos = player.getEyePos();
             HashSet<BlockPos> set = game.safeBlocks.get(player.getWorld());
             for (BlockPos pos : BlockPos.iterate(
@@ -26,10 +28,9 @@ public class OnServerEndTick implements ServerTickEvents.EndTick{
                     BlockPos.ofFloored(eyePos.getX() + 6, eyePos.getY() + 6, eyePos.getZ() + 6))){
                 BlockState state = player.getWorld().getBlockState(pos);
                 VoxelShape shape = state.getCollisionShape(player.getWorld(), pos);
-                if(shape.isEmpty()) set.add(pos);
+                if(shape.isEmpty() && !set.contains(pos))
+                    set.add(new BlockPos(pos));
             }
-            if(player.isCreative()) continue;
-            if(player.isSpawnForced()) continue;
             if(!player.isOnGround()) continue;
             Box playerBox = player.getBoundingBox();
             double expandValue = 0.0001;
