@@ -5,6 +5,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
@@ -13,6 +14,7 @@ import net.minecraft.util.shape.VoxelShape;
 import java.util.HashSet;
 
 import static lpcminigame.util.StringUtils.*;
+import static lpcminigame.games.dieOnNaturalBlocks.DieOnNaturalBlocks.*;
 
 public class OnServerEndTick implements ServerTickEvents.EndTick{
     DieOnNaturalBlocks game;
@@ -25,8 +27,8 @@ public class OnServerEndTick implements ServerTickEvents.EndTick{
             if(player.isCreative()) continue;
             if(player.isSpectator()) continue;
             Vec3d eyePos = player.getEyePos();
-            String worldStringId = getWorldStringId(player.getWorld());
-            HashSet<BlockPos> set = game.safeBlocks.computeIfAbsent(worldStringId, k -> new HashSet<>());
+            ServerWorld world = player.getServerWorld();
+            HashSet<BlockPos> set = game.safePoses.computeIfAbsent(world);
             for (BlockPos pos : BlockPos.iterate(
                     BlockPos.ofFloored(eyePos.getX() - 6, eyePos.getY() - 6, eyePos.getZ() - 6),
                     BlockPos.ofFloored(eyePos.getX() + 6, eyePos.getY() + 6, eyePos.getZ() + 6))){
@@ -42,10 +44,11 @@ public class OnServerEndTick implements ServerTickEvents.EndTick{
             if(testPlayerWithBox(player, playerBox.expand(0, expandValue, 0))) continue;
             testPlayerWithBox(player, playerBox.expand(0, 0, expandValue));
         }
+        game.safePoses.refTest();
     }
     private boolean testPlayerWithBox(ServerPlayerEntity player, Box playerBox){
         String worldStringId = getWorldStringId(player.getWorld());
-        HashSet<BlockPos> set = game.safeBlocks.get(worldStringId);
+        DataClass set = game.safePoses.get(worldStringId);
         if(set == null) return false;
         for (BlockPos pos : BlockPos.iterate(
                 BlockPos.ofFloored(playerBox.minX, playerBox.minY, playerBox.minZ),

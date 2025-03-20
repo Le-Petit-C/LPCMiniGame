@@ -68,7 +68,9 @@ public class Main implements ModInitializer, ServerLifecycleEvents.ServerStoppin
 			argument2.suggests(new StringCollectionCommandSuggestionProvider(List.of("start", "stop", "clear")));
 			argument2.executes(this);
 			RequiredArgumentBuilder<ServerCommandSource, String> argument1 = CommandManager.argument("gameId", arg);
-			argument1.suggests(new StringCollectionCommandSuggestionProvider(gameIds));
+			ArrayList<String> suggestList = new ArrayList<>(gameIds);
+			suggestList.add("all");
+			argument1.suggests(new StringCollectionCommandSuggestionProvider(suggestList));
 			argument1.then(argument2);
 			LiteralArgumentBuilder<ServerCommandSource> builder = CommandManager.literal("lpcminigame");
 			builder.requires(source -> source.hasPermissionLevel(2));
@@ -79,31 +81,75 @@ public class Main implements ModInitializer, ServerLifecycleEvents.ServerStoppin
 		@Override
 		public int run(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
 			String gameId = StringArgumentType.getString(context, "gameId");
+			boolean isAll = gameId.equals("all");
 			IGameMain game = gameIdToGame.get(gameId);
-			if(game == null) throw new CommandSyntaxException(null, ()->"No matching game");
+			if(game == null && !isAll) throw new CommandSyntaxException(null, ()->"No matching game");
 			String option = StringArgumentType.getString(context, "option");
+			MinecraftServer server = context.getSource().getServer();
+			String feedbackString;
+			boolean exception = false;
             switch (option) {
-                case "start" -> {
-                    if (game.isGameStarted())
-                        throw new CommandSyntaxException(null, () -> "Game " + game.getGameId() + " already started");
-                    game.startGame(context.getSource().getServer());
-                    context.getSource().sendFeedback(() -> Text.literal("Game " + game.getGameId() + " starts"), true);
-                    return 1;
-                }
-                case "stop" -> {
-                    if (!game.isGameStarted())
-                        throw new CommandSyntaxException(null, () -> "Game " + game.getGameId() + " is not started");
-                    game.stopGame(context.getSource().getServer());
-                    context.getSource().sendFeedback(() -> Text.literal("Game " + game.getGameId() + " stops"), true);
-                    return 1;
-                }
-                case "clear" -> {
-                    game.clearData(context.getSource().getServer());
-                    context.getSource().sendFeedback(() -> Text.literal("Cleared game " + game.getGameId() + " data"), true);
-                    return 1;
-                }
-				default -> throw new CommandSyntaxException(null, ()-> "Argument 2 should be \"start\" or \"stop\" but not \"" + option +"\"");
+				case "start":
+					if(isAll){
+						exception = true;
+						for(IGameMain gameMain : games){
+							if(!gameMain.isGameStarted()){
+								gameMain.startGame(server);
+								exception = false;
+							}
+						}
+						if(exception) feedbackString = "All games already started";
+						else feedbackString = "Started all games";
+					}
+					else{
+						exception = game.isGameStarted();
+						if(exception) feedbackString = "Game \"" + game.getGameId() + "\" already started";
+						else{
+							game.startGame(server);
+							feedbackString = "Started game \"" + game.getGameId() + "\"";
+						}
+					}
+					break;
+				case "stop":
+					if(isAll){
+						exception = true;
+						for(IGameMain gameMain : games){
+							if(gameMain.isGameStarted()){
+								gameMain.stopGame(server);
+								exception = false;
+							}
+						}
+						if(exception) feedbackString = "No game is running";
+						else feedbackString = "Stopped all games";
+					}
+					else{
+						exception = !game.isGameStarted();
+						if (exception) feedbackString = "Game " + game.getGameId() + " is not running";
+						else{
+							game.stopGame(server);
+							feedbackString = "Stopped game \"" + game.getGameId() + "\"";
+						}
+					}
+					break;
+				case "clear":
+					if(isAll){
+						for(IGameMain gameMain : games)
+							if(gameMain.isGameStarted())
+								gameMain.clearData(server);
+						feedbackString = "Cleared all game data";
+					}
+					else{
+						game.clearData(server);
+						feedbackString = "Cleared game \"" + game.getGameId() + "\" data";
+					}
+                    break;
+				default:
+					exception = true;
+					feedbackString = "Argument 2 should be \"start\", \"stop\" or \"clear\" but not \"" + option +"\"";
             }
+			if(exception) throw new CommandSyntaxException(null, () -> feedbackString);
+			context.getSource().sendFeedback(() -> Text.literal(feedbackString), true);
+			return 1;
 		}
 	}
 }
