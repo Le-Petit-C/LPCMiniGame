@@ -3,7 +3,9 @@ package lpcminigame.games.dieOnNaturalBlocks;
 import lpcminigame.IGameMain;
 import lpcminigame.events.UnregistrableEvent;
 import lpcminigame.events.UnregistrableServerTickEvents;
+import lpcminigame.events.UnregistrableUseBlockCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -32,6 +34,7 @@ public class DieOnNaturalBlocks implements IGameMain {
     @Override public void startGame(MinecraftServer server){
         if(isGameStarted()) return;
         endTickEvent = UnregistrableServerTickEvents.END_SERVER_TICK.register(new OnServerEndTick(this));
+        useBlockCallback = UnregistrableUseBlockCallback.EVENT.register(new OnBlockPlaced(this));
         addRespawnPoints(server);
         for(ServerWorld world : server.getWorlds()){
             Identifier id = world.getRegistryKey().getValue();
@@ -51,6 +54,7 @@ public class DieOnNaturalBlocks implements IGameMain {
         safePoses.clearTest();
     }
     @Override public void stopGame(MinecraftServer server){
+        if(!isGameStarted()) return;
         for (ServerWorld world : server.getWorlds()) {
             Identifier id = world.getRegistryKey().getValue();
             Path filePath = getDataDir(server).resolve(id.getNamespace()).resolve(id.getPath() + ".dat");
@@ -70,6 +74,8 @@ public class DieOnNaturalBlocks implements IGameMain {
         safePoses.clear();
         endTickEvent.unregister();
         endTickEvent = null;
+        useBlockCallback.unregister();
+        useBlockCallback = null;
     }
     @Override public void clearData(MinecraftServer server) {
         if(isGameStarted()) {
@@ -132,6 +138,7 @@ public class DieOnNaturalBlocks implements IGameMain {
     }
 
     private UnregistrableEvent<ServerTickEvents.EndTick> endTickEvent;
+    private UnregistrableEvent<UseBlockCallback> useBlockCallback;
     private void addRespawnPoints(MinecraftServer server){
         HashSet<BlockPos> set = safePoses.computeIfAbsent(server.getOverworld());
         int respawnRadius = server.getSpawnRadius(server.getOverworld());

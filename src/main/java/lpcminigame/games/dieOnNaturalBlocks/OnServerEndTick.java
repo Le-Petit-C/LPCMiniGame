@@ -5,13 +5,9 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShape;
-
-import java.util.HashSet;
 
 import static lpcminigame.util.StringUtils.*;
 import static lpcminigame.games.dieOnNaturalBlocks.DieOnNaturalBlocks.*;
@@ -26,18 +22,6 @@ public class OnServerEndTick implements ServerTickEvents.EndTick{
             if(player.isDead()) continue;
             if(player.isCreative()) continue;
             if(player.isSpectator()) continue;
-            Vec3d eyePos = player.getEyePos();
-            ServerWorld world = player.getServerWorld();
-            HashSet<BlockPos> set = game.safePoses.computeIfAbsent(world);
-            for (BlockPos pos : BlockPos.iterate(
-                    BlockPos.ofFloored(eyePos.getX() - 6, eyePos.getY() - 6, eyePos.getZ() - 6),
-                    BlockPos.ofFloored(eyePos.getX() + 6, eyePos.getY() + 6, eyePos.getZ() + 6))){
-                BlockState state = player.getWorld().getBlockState(pos);
-                VoxelShape shape = state.getCollisionShape(player.getWorld(), pos);
-                if(shape.isEmpty() && !set.contains(pos))
-                    set.add(new BlockPos(pos));
-            }
-            if(!player.isOnGround()) continue;
             Box playerBox = player.getBoundingBox();
             double expandValue = 0.0001;
             if(testPlayerWithBox(player, playerBox.expand(expandValue, 0, 0))) continue;
