@@ -7,7 +7,6 @@ import lpcminigame.events.UnregistrableUseBlockCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
@@ -17,11 +16,9 @@ import java.io.*;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 
 import static lpcminigame.util.BlockUtils.*;
 import static lpcminigame.util.FileUtils.*;
-import static lpcminigame.util.MathUtils.*;
 import static lpcminigame.util.StringUtils.*;
 
 public class DieOnNaturalBlocks implements IGameMain {
@@ -115,22 +112,10 @@ public class DieOnNaturalBlocks implements IGameMain {
             return super.add(pos1);
         }
         public void refTest(){
-            for (Iterator<BlockPos> iterator = posesShouldTest.iterator(); iterator.hasNext(); ) {
-                BlockPos pos = iterator.next();
-                boolean shouldRemove = true;
-                for(ServerPlayerEntity player : world.getPlayers()){
-                    BlockPos eyePos = BlockPos.ofFloored(player.getEyePos());
-                    if(getChebyshevDistance(eyePos, pos) <= 6){
-                        shouldRemove = false;
-                        break;
-                    }
-                }
-                if(shouldRemove){
-                    if(isEmptyCollisionBlock(world, pos))
-                        super.remove(pos);
-                    iterator.remove();
-                }
-            }
+            for (BlockPos pos : posesShouldTest)
+                if (isEmptyCollisionBlock(world, pos))
+                    super.remove(pos);
+            posesShouldTest.clear();
         }
         public void clearTest(){
             posesShouldTest.clear();
