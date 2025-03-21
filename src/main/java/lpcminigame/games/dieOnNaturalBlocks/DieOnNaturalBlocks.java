@@ -1,16 +1,14 @@
 package lpcminigame.games.dieOnNaturalBlocks;
 
 import lpcminigame.IGameMain;
-import lpcminigame.events.UnregistrableEvent;
-import lpcminigame.events.UnregistrableServerTickEvents;
-import lpcminigame.events.UnregistrableUseBlockCallback;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.minecraft.entity.FallingBlockEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.nio.file.Path;
@@ -23,15 +21,14 @@ import static lpcminigame.util.StringUtils.*;
 
 public class DieOnNaturalBlocks implements IGameMain {
     @Override public boolean isGameStarted(){
-        return endTickEvent != null;
+        return events != null;
     }
     @Override public String getGameId() {
         return "dieOnNaturalBlocks";
     }
     @Override public void startGame(MinecraftServer server){
         if(isGameStarted()) return;
-        endTickEvent = UnregistrableServerTickEvents.END_SERVER_TICK.register(new OnServerEndTick(this));
-        useBlockCallback = UnregistrableUseBlockCallback.EVENT.register(new OnBlockPlaced(this));
+        events = new Events(this);
         addRespawnPoints(server);
         for(ServerWorld world : server.getWorlds()){
             Identifier id = world.getRegistryKey().getValue();
@@ -57,8 +54,7 @@ public class DieOnNaturalBlocks implements IGameMain {
             Path filePath = getDataDir(server).resolve(id.getNamespace()).resolve(id.getPath() + ".dat");
             if (ensureFile(filePath)) {
                 try (DataOutputStream stream = new DataOutputStream(new FileOutputStream(String.valueOf(filePath)))) {
-                    String worldStringId = getWorldStringId(world);
-                    HashSet<BlockPos> set = safePoses.get(worldStringId);
+                    HashSet<BlockPos> set = safePoses.get(world);
                     if(set == null) continue;
                     for (BlockPos pos : set) {
                         stream.writeInt(pos.getX());
@@ -69,10 +65,8 @@ public class DieOnNaturalBlocks implements IGameMain {
             }
         }
         safePoses.clear();
-        endTickEvent.unregister();
-        endTickEvent = null;
-        useBlockCallback.unregister();
-        useBlockCallback = null;
+        events.disable();
+        events = null;
     }
     @Override public void clearData(MinecraftServer server) {
         if(isGameStarted()) {
@@ -83,8 +77,12 @@ public class DieOnNaturalBlocks implements IGameMain {
     }
 
     @NotNull DataMap safePoses = new DataMap();
+    @NotNull FallingBlockMap unnaturalFallingBlocks = new FallingBlockMap();
     static class DataMap extends HashMap<String, DataClass>{
-        @NotNull HashSet<BlockPos> computeIfAbsent(ServerWorld world){
+        @Nullable DataClass get(World world){
+            return super.get(getWorldStringId(world));
+        }
+        @NotNull DataClass computeIfAbsent(ServerWorld world){
             return computeIfAbsent(getWorldStringId(world), k -> new DataClass(world));
         }
         public void refTest(){
@@ -111,6 +109,9 @@ public class DieOnNaturalBlocks implements IGameMain {
             posesShouldTest.add(pos1);
             return super.add(pos1);
         }
+        public void addWithoutTest(BlockPos pos) {
+            super.add(new BlockPos(pos));
+        }
         public void refTest(){
             for (BlockPos pos : posesShouldTest)
                 if (isEmptyCollisionBlock(world, pos))
@@ -121,9 +122,20 @@ public class DieOnNaturalBlocks implements IGameMain {
             posesShouldTest.clear();
         }
     }
+    static class FallingBlockMap extends HashMap<String, FallingBlockSet>{
+        @Nullable FallingBlockSet get(World world){
+            return super.get(getWorldStringId(world));
+        }
+        @NotNull FallingBlockSet computeIfAbsent(String key){
+            return super.computeIfAbsent(key, s -> new FallingBlockSet());
+        }
+        @NotNull FallingBlockSet computeIfAbsent(World world){
+            return computeIfAbsent(getWorldStringId(world));
+        }
+    }
+    static class FallingBlockSet extends HashSet<FallingBlockEntity>{}
 
-    private UnregistrableEvent<ServerTickEvents.EndTick> endTickEvent;
-    private UnregistrableEvent<UseBlockCallback> useBlockCallback;
+    private Events events;
     private void addRespawnPoints(MinecraftServer server){
         HashSet<BlockPos> set = safePoses.computeIfAbsent(server.getOverworld());
         int respawnRadius = server.getSpawnRadius(server.getOverworld());

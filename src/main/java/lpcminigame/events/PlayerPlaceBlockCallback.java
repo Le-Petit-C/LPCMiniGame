@@ -16,12 +16,5 @@ public interface PlayerPlaceBlockCallback{
                 return ActionResult.PASS;
             }
             );
-
     ActionResult interact(World world, BlockPos pos, PlayerEntity player);
-
-    /*private final Queue<PossiblyChangedBlockData> queue = new LinkedList<>();
-    private record PossiblyChangedBlockData(World world, BlockPos pos, PlayerEntity player, Block oldBlock){}
-    public static void blockPlacedByPlayer(World world, BlockPos pos, PlayerEntity player){
-        player.sendMessage(Text.of("Place block detected!"), true);
-    }*/
 }
