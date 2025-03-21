@@ -48,6 +48,7 @@ public class DieOnNaturalBlocks implements IGameMain {
                 }
             }catch (IOException ignore){}
         }
+        safePoses.clearTest();
     }
     @Override public void stopGame(MinecraftServer server){
         for (ServerWorld world : server.getWorlds()) {
@@ -87,6 +88,11 @@ public class DieOnNaturalBlocks implements IGameMain {
             for(DataClass data : super.values())
                 data.refTest();
         }
+        public void clearTest(){
+            for(DataClass data : super.values()){
+                data.clearTest();
+            }
+        }
     }
     static class DataClass extends HashSet<BlockPos>{
         public ServerWorld world;
@@ -119,6 +125,9 @@ public class DieOnNaturalBlocks implements IGameMain {
                     iterator.remove();
                 }
             }
+        }
+        public void clearTest(){
+            posesShouldTest.clear();
         }
     }
 
