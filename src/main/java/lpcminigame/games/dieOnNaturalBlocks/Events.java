@@ -74,11 +74,21 @@ public class Events implements
             if(player.isDead()) continue;
             if(player.isCreative()) continue;
             if(player.isSpectator()) continue;
+            if(player.getVehicle() != null){
+                if(game.banVehicle) player.kill(player.getServerWorld());
+                continue;
+            }
             Box playerBox = player.getBoundingBox();
             double expandValue = 0.0001;
-            if(testPlayerWithBox(player, playerBox.expand(expandValue, 0, 0))) continue;
-            if(testPlayerWithBox(player, playerBox.expand(0, expandValue, 0))) continue;
-            testPlayerWithBox(player, playerBox.expand(0, 0, expandValue));
+            if(game.difficulty.testAllDirections){
+                if(testPlayerWithBox(player, playerBox.expand(expandValue, 0, 0))) continue;
+                if(testPlayerWithBox(player, playerBox.expand(0, 0, expandValue))) continue;
+                testPlayerWithBox(player, playerBox.expand(0, expandValue, 0));
+            }
+            else {
+                Box box = new Box(playerBox.getMinPos().add(0, -expandValue, 0), playerBox.getMaxPos());
+                testPlayerWithBox(player, box);
+            }
         }
         game.safePoses.refTest();
     }
@@ -111,22 +121,30 @@ public class Events implements
     private final @NotNull UnregistrableEvent<ServerEntityEvents.Unload> unloadEntity;
     private final @NotNull UnregistrableEvent<PlayerBlockBreakEvents.After> afterBlockBroken;
     private boolean testPlayerWithBox(ServerPlayerEntity player, Box playerBox){
+        boolean touchingSafe = false, touchingDangerous = false;
         DieOnNaturalBlocks.DataClass set = game.safePoses.get(player.getWorld());
         if(set == null) return false;
+        if(game.difficulty.escapeWhenDirectlyBelowEmptyOrSafe){
+            if(isEmptyCollisionBlock(player.getWorld(), player.getBlockPos().down()))
+                return false;
+            if(set.contains(player.getBlockPos().down()))
+                return false;
+        }
         for (BlockPos pos : BlockPos.iterate(
                 BlockPos.ofFloored(playerBox.minX, playerBox.minY, playerBox.minZ),
                 BlockPos.ofFloored(playerBox.maxX, playerBox.maxY, playerBox.maxZ))) {
-            if(set.contains(pos)) continue;
             BlockState state = player.getWorld().getBlockState(pos);
-            if(state.getBlock().equals(Blocks.OBSIDIAN)) continue;
             VoxelShape shape = state.getCollisionShape(player.getWorld(), pos);
             if(shape.isEmpty()) continue;
             if (playerBox.intersects(shape.getBoundingBox().offset(pos))){
-                player.kill(player.getServerWorld());
-                return true;
+                if(set.contains(pos) || state.getBlock().equals(Blocks.OBSIDIAN))
+                    touchingSafe = true;
+                else touchingDangerous = true;
             }
         }
-        return false;
+        if(touchingSafe && game.difficulty.escapeWhenTouchingSafe) return false;
+        else if(touchingDangerous) player.kill(player.getServerWorld());
+        return touchingDangerous;
     }
 
 }

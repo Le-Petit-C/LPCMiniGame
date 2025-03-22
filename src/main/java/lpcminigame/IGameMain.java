@@ -1,6 +1,7 @@
 package lpcminigame;
 
 import com.mojang.brigadier.context.CommandContext;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.util.WorldSavePath;
@@ -9,10 +10,15 @@ import java.nio.file.Path;
 
 import static lpcminigame.Main.*;
 
-public interface IGameMain {
+public interface IGameMain extends
+        ServerLifecycleEvents.ServerStarted,
+        ServerLifecycleEvents.ServerStopped
+{
     String getGameId();
     boolean isGameStarted();
-    default void onServerInitialize(){}
+    default void onModInitialize(){}
+    @Override default void onServerStarted(MinecraftServer world){}
+    @Override default void onServerStopped(MinecraftServer world){}
     default void startGame(MinecraftServer server){}
     default void stopGame(MinecraftServer server){}
     default void clearData(MinecraftServer server){}

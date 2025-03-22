@@ -32,9 +32,10 @@ public class Main implements ModInitializer, CommandRegistrationCallback {
 
 	@Override public void onInitialize() {
 		LOGGER.info("LPCMiniGame Initializing");
-		for(IGameMain game : games) game.onServerInitialize();
+		for(IGameMain game : games) game.onModInitialize();
 		CommandRegistrationCallback.EVENT.register(this);
-		ServerLifecycleEvents.SERVER_STOPPING.register(all::stopGame);
+		ServerLifecycleEvents.SERVER_STARTED.register(all);
+		ServerLifecycleEvents.SERVER_STOPPED.register(all);
 		LOGGER.info("LPCMiniGame Initialized");
 	}
 	@Override
@@ -67,21 +68,28 @@ public class Main implements ModInitializer, CommandRegistrationCallback {
 			success(message, 1);
 		}
 	}
+	@SuppressWarnings({"UnusedReturnValue", "unused"})
 	public static class CommandBuilder extends LiteralArgumentBuilder<ServerCommandSource>{
-		protected CommandBuilder(String literal) {super(literal);}
-		CommandBuilder then(String literal, Command<ServerCommandSource> command){
-			then(CommandManager.literal(literal).executes(command));
-			return this;
-		}
-		@SuppressWarnings("UnusedReturnValue")
-		CommandBuilder then(String literal, Runner runner){
-			return then(literal, (context) ->{
+		public CommandBuilder(String literal) {super(literal);}
+		public CommandBuilder executes(Runner runner){
+			super.executes((context) ->{
 				runInfo info = new runInfo();
 				runner.run(context, info);
 				if(info.exception) throw new CommandSyntaxException(null, () -> info.message);
 				else context.getSource().sendFeedback(() -> Text.literal(info.message), true);
 				return info.ret;
 			});
+			return this;
+		}
+		public CommandBuilder then(String literal, Command<ServerCommandSource> command){
+			then(CommandManager.literal(literal).executes(command));
+			return this;
+		}
+		public CommandBuilder then(String literal, Runner runner){
+			CommandBuilder subcommand = new CommandBuilder(literal);
+			subcommand.executes(runner);
+			then(subcommand);
+			return this;
 		}
 	}
 }

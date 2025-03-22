@@ -1,5 +1,6 @@
 package lpcminigame.games.dieOnNaturalBlocks;
 
+import com.google.gson.Gson;
 import lpcminigame.IGameMain;
 import net.minecraft.entity.FallingBlockEntity;
 import net.minecraft.server.MinecraftServer;
@@ -15,17 +16,21 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import static lpcminigame.Main.*;
 import static lpcminigame.util.BlockUtils.*;
 import static lpcminigame.util.FileUtils.*;
 import static lpcminigame.util.StringUtils.*;
 
 public class DieOnNaturalBlocks implements IGameMain {
-    @Override public boolean isGameStarted(){
-        return events != null;
+    @Override public void onServerStarted(MinecraftServer server){
+        ConfigDataWrapper.readAndLoad(this, server);
     }
-    @Override public String getGameId() {
-        return "dieOnNaturalBlocks";
+    @Override public void onServerStopped(MinecraftServer server){
+        if(isGameStarted()) stopGame(server);
+        ConfigDataWrapper.wrapAndSave(this, server);
     }
+    @Override public boolean isGameStarted(){return events != null;}
+    @Override public String getGameId() {return "dieOnNaturalBlocks";}
     @Override public void startGame(MinecraftServer server){
         if(isGameStarted()) return;
         events = new Events(this);
@@ -67,6 +72,7 @@ public class DieOnNaturalBlocks implements IGameMain {
         safePoses.clear();
         events.disable();
         events = null;
+        ConfigDataWrapper.wrapAndSave(this, server);
     }
     @Override public void clearData(MinecraftServer server) {
         if(isGameStarted()) {
@@ -75,7 +81,61 @@ public class DieOnNaturalBlocks implements IGameMain {
         }
         else deletePath(getDataDir(server));
     }
-
+    @Override public void buildCommand(CommandBuilder command){
+        IGameMain.super.buildCommand(command);
+        CommandBuilder difficultyCommand = new CommandBuilder("difficulty");
+        difficultyCommand.executes((context, info) -> info.success("Current Difficulty: " + difficulty.id));
+        for(Difficulty difficulty : Difficulty.values())
+            difficultyCommand.then(difficulty.id, (context, info) -> commandDifficulty(difficulty, info));
+        command.then(difficultyCommand);
+        CommandBuilder banVehicleCommand = new CommandBuilder("banVehicle");
+        banVehicleCommand.executes((context, info) -> info.success("Current banVehicle: " + banVehicle));
+        banVehicleCommand.then("true", (context, info) -> commandBanVehicle(true, info));
+        banVehicleCommand.then("false", (context, info) -> commandBanVehicle(false, info));
+        command.then(banVehicleCommand);
+    }
+    enum Difficulty{
+        STRICT("strict", true, false, false),
+        NORMAL("normal", false, false, false),
+        LOOSE1("Dream-loose", false, true, false),
+        LOOSE2("Another-loose", false, false, true),
+        LOOSEST("loosest", false, true, true);
+        public final String id;
+        public final boolean testAllDirections;
+        public final boolean escapeWhenDirectlyBelowEmptyOrSafe;
+        public final boolean escapeWhenTouchingSafe;
+        Difficulty(String id, boolean testAllDirections, boolean escapeWhenDirectlyBelowEmptyOrSafe, boolean escapeWhenTouchingSafe){
+            this.id = id;
+            this.testAllDirections = testAllDirections;
+            this.escapeWhenDirectlyBelowEmptyOrSafe = escapeWhenDirectlyBelowEmptyOrSafe;
+            this.escapeWhenTouchingSafe = escapeWhenTouchingSafe;
+        }
+        @NotNull public static Difficulty fromString(String id){
+            for(Difficulty difficulty : Difficulty.values()){
+                if(difficulty.id.equals(id))
+                    return difficulty;
+            }
+            return NORMAL;
+        }
+    }
+    Difficulty difficulty = Difficulty.NORMAL;
+    boolean banVehicle = false;
+    void commandDifficulty(Difficulty difficulty, runInfo info) {
+        if(this.difficulty.equals(difficulty))
+            info.exception("Difficulty is already set to " + difficulty.id);
+        else{
+            this.difficulty = difficulty;
+            info.success("Difficulty now set to " + difficulty.id);
+        }
+    }
+    void commandBanVehicle(boolean banVehicle, runInfo info) {
+        if(this.banVehicle == banVehicle)
+            info.exception("banVehicle is already set to " + banVehicle);
+        else{
+            this.banVehicle = banVehicle;
+            info.success("banVehicle now set to " + banVehicle);
+        }
+    }
     @NotNull DataMap safePoses = new DataMap();
     @NotNull FallingBlockMap unnaturalFallingBlocks = new FallingBlockMap();
     static class DataMap extends HashMap<String, DataClass>{
@@ -148,6 +208,29 @@ public class DieOnNaturalBlocks implements IGameMain {
         )){
             if(!set.contains(pos))
                 set.add(new BlockPos(pos));
+        }
+    }
+    private static class ConfigDataWrapper {
+        private String difficulty;
+        private boolean banVehicle;
+        private static String settingFilePath(DieOnNaturalBlocks game, MinecraftServer server){
+            return String.valueOf(game.getDataDir(server).resolve("config.json"));
+        }
+        public static void readAndLoad(DieOnNaturalBlocks game, MinecraftServer server){
+            try {
+                ConfigDataWrapper config = (new Gson())
+                        .fromJson(new FileReader(settingFilePath(game, server)), ConfigDataWrapper.class);
+                game.difficulty = Difficulty.fromString(config.difficulty);
+                game.banVehicle = config.banVehicle;
+            } catch (FileNotFoundException ignore) {}
+        }
+        public static void wrapAndSave(DieOnNaturalBlocks game, MinecraftServer server){Gson gson = new Gson();
+            ConfigDataWrapper wrapper = new ConfigDataWrapper();
+            wrapper.difficulty = game.difficulty.id;
+            wrapper.banVehicle = game.banVehicle;
+            try (FileWriter writer = new FileWriter(settingFilePath(game, server))) {
+                gson.toJson(wrapper, writer);
+            } catch (IOException ignore) {}
         }
     }
 }
