@@ -95,19 +95,22 @@ public class DieOnNaturalBlocks implements IGameMain {
         command.then(banVehicleCommand);
     }
     enum Difficulty{
-        STRICT("strict", true, false, false),
-        NORMAL("normal", false, false, false),
-        LOOSE1("Dream-loose", false, true, false),
-        LOOSE2("Another-loose", false, false, true),
-        LOOSEST("loosest", false, true, true);
+        GOD("god", true, false, false, false),
+        STRICT("strict", false, false, false, false),
+        NORMAL("normal", false, false, true, false),
+        LOOSE1("Dream-loose", false, true, true, false),
+        LOOSE2("Another-loose", false, false, false, true),
+        LOOSEST("loosest", false, true, false, true);
         public final String id;
         public final boolean testAllDirections;
-        public final boolean escapeWhenDirectlyBelowEmptyOrSafe;
+        public final boolean directlyBelowEmptyAsTouchingSafe;
+        public final boolean testOnlyNearestTouch;
         public final boolean escapeWhenTouchingSafe;
-        Difficulty(String id, boolean testAllDirections, boolean escapeWhenDirectlyBelowEmptyOrSafe, boolean escapeWhenTouchingSafe){
+        Difficulty(String id, boolean testAllDirections, boolean directlyBelowEmptyAsTouchingSafe, boolean testOnlyNearestTouch, boolean escapeWhenTouchingSafe){
             this.id = id;
             this.testAllDirections = testAllDirections;
-            this.escapeWhenDirectlyBelowEmptyOrSafe = escapeWhenDirectlyBelowEmptyOrSafe;
+            this.directlyBelowEmptyAsTouchingSafe = directlyBelowEmptyAsTouchingSafe;
+            this.testOnlyNearestTouch = testOnlyNearestTouch;
             this.escapeWhenTouchingSafe = escapeWhenTouchingSafe;
         }
         @NotNull public static Difficulty fromString(String id){

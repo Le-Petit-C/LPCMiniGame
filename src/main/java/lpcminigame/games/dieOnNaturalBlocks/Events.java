@@ -35,6 +35,7 @@ public class Events implements
         ServerEntityEvents.Unload,
         PlayerBlockBreakEvents.After
 {
+    private static final double expandValue = 0.001;
     Events(DieOnNaturalBlocks game){
         this.game = game;
         endTick = UnregistrableServerTickEvents.END_SERVER_TICK.register(this);
@@ -79,7 +80,6 @@ public class Events implements
                 continue;
             }
             Box playerBox = player.getBoundingBox();
-            double expandValue = 0.0001;
             if(game.difficulty.testAllDirections){
                 if(testPlayerWithBox(player, playerBox.expand(expandValue, 0, 0))) continue;
                 if(testPlayerWithBox(player, playerBox.expand(0, 0, expandValue))) continue;
@@ -121,24 +121,33 @@ public class Events implements
     private final @NotNull UnregistrableEvent<ServerEntityEvents.Unload> unloadEntity;
     private final @NotNull UnregistrableEvent<PlayerBlockBreakEvents.After> afterBlockBroken;
     private boolean testPlayerWithBox(ServerPlayerEntity player, Box playerBox){
+        double nearestDistanceSquare = Double.MAX_VALUE;
+        BlockPos directlyDownBlockPos = BlockPos.ofFloored(player.getPos().add(0, -expandValue, 0));
         boolean touchingSafe = false, touchingDangerous = false;
         DieOnNaturalBlocks.DataClass set = game.safePoses.get(player.getWorld());
         if(set == null) return false;
-        if(game.difficulty.escapeWhenDirectlyBelowEmptyOrSafe){
-            if(isEmptyCollisionBlock(player.getWorld(), player.getBlockPos().down()))
-                return false;
-            if(set.contains(player.getBlockPos().down()))
-                return false;
-        }
         for (BlockPos pos : BlockPos.iterate(
                 BlockPos.ofFloored(playerBox.minX, playerBox.minY, playerBox.minZ),
                 BlockPos.ofFloored(playerBox.maxX, playerBox.maxY, playerBox.maxZ))) {
+            boolean isSafe;
             BlockState state = player.getWorld().getBlockState(pos);
             VoxelShape shape = state.getCollisionShape(player.getWorld(), pos);
-            if(shape.isEmpty()) continue;
-            if (playerBox.intersects(shape.getBoundingBox().offset(pos))){
-                if(set.contains(pos) || state.getBlock().equals(Blocks.OBSIDIAN))
-                    touchingSafe = true;
+            if (!shape.isEmpty() && playerBox.intersects(shape.getBoundingBox().offset(pos))){
+                isSafe = set.contains(pos) || state.getBlock().equals(Blocks.OBSIDIAN);
+            }
+            else if(game.difficulty.directlyBelowEmptyAsTouchingSafe && pos.equals(directlyDownBlockPos)){
+                isSafe = true;
+            }
+            else continue;
+            if (game.difficulty.testOnlyNearestTouch) {
+                double distanceSquare = pos.getSquaredDistance(player.getPos());
+                if (distanceSquare >= nearestDistanceSquare) continue;
+                nearestDistanceSquare = distanceSquare;
+                touchingSafe = isSafe;
+                touchingDangerous = !isSafe;
+            }
+            else {
+                if (isSafe) touchingSafe = true;
                 else touchingDangerous = true;
             }
         }
