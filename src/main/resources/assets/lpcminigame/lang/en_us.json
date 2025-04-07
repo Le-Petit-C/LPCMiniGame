@@ -1,0 +1,23 @@
+{
+  "lpcminigame.gameAlreadyStarted": "Game \"%s\" already started",
+  "lpcminigame.gameStarted": "Started game \"%s\"",
+  "lpcminigame.gameNotRunning": "Game \"%s\" is not running",
+  "lpcminigame.gameStopped": "Stopped game \"%s\"",
+  "lpcminigame.gameCleared": "Cleared game \"%s\" data",
+  "lpcminigame.all.gameAlreadyStarted": "All games already started",
+  "lpcminigame.all.gameStarted": "Started all games",
+  "lpcminigame.all.gameNotRunning": "No game is running",
+  "lpcminigame.all.gameStopped": "Stopped all games",
+  "lpcminigame.all.gameCleared": "Cleared all game data",
+  "lpcminigame.dieOnTouchingGround.gameName": "Die On Touching Ground",
+  "lpcminigame.dieOnTouchingGround.difficulty.get": "Current Difficulty: %s",
+  "lpcminigame.dieOnTouchingGround.difficulty.already": "Difficulty is already set to \"%s\"",
+  "lpcminigame.dieOnTouchingGround.difficulty.set": "Difficulty now set to \"%s\"",
+  "lpcminigame.dieOnTouchingGround.banVehicle.get": "Vehicle banned?: %s",
+  "lpcminigame.dieOnTouchingGround.banVehicle.already": "banVehicle is already set to \"%s\"",
+  "lpcminigame.dieOnTouchingGround.banVehicle.set": "banVehicle now set to \"%s\"",
+  "lpcminigame.dieOnTouchingGround.help":
+  "Mini-game \"Die On Touching Ground\" instructions:\n  Game Rules:\n    Touching naturally generated blocks after game starts will cause death\n    Only stepping on recorded player-placed blocks is safe\n    Blocks placed before game starts won't be counted\n    Spawn area protected to avoid death loops\n  Subcommands:\n    start: Begin game\n    stop: Pause game\n    banVehicle: Toggle vehicle usage\n    difficulty: Get or set difficulty (see 'difficulty help' for details)\n    clear: Reset game data\n    help: Show this prompt",
+  "lpcminigame.dieOnTouchingGround.difficulty.help":
+  "Difficulty Levels:\n  god:Omni-Strict Detection - Death on any directional contact with naturally generated blocks\n  strict:Precision Detection - Death when stepping on even partially natural blocks\n  normal:Standard Check - Death triggered by block directly beneath player (including edge cases)\n  Another-loose:Lenient Mode 1 - Death only when exclusively stepping on natural blocks\n  Dream-loose:Dream-style Detection - Only checks foot block (allows edge-standing via air gaps)\n  loosest:Ultra-Lenient - Requires natural block beneath AND no contact with player-placed blocks"
+}

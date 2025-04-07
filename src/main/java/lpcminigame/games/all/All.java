@@ -4,6 +4,7 @@ import com.mojang.brigadier.context.CommandContext;
 import lpcminigame.IGameMain;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.text.Text;
 
 import static lpcminigame.Main.*;
 
@@ -34,25 +35,25 @@ public class All implements IGameMain {
             game.startGame(server);
         }
     }
-    @Override public void commandRun(CommandContext<ServerCommandSource> context, runInfo info) {
-        info.exception("All games already started");
+    @Override public void commandRun(CommandContext<ServerCommandSource> context, RunInfo info) {
+        info.exception(Text.translatable("lpcminigame.all.gameAlreadyStarted"));
         for(IGameMain game : games){
             if(game.isGameStarted()) continue;
             game.startGame(context.getSource().getServer());
-            info.success("Started all games", info.ret + 1);
+            info.success(Text.translatable("lpcminigame.all.gameStarted"), info.ret + 1);
         }
     }
-    @Override public void commandStop(CommandContext<ServerCommandSource> context, runInfo info) {
-        info.exception("No game is running");
+    @Override public void commandStop(CommandContext<ServerCommandSource> context, RunInfo info) {
+        info.exception(Text.translatable("lpcminigame.all.gameNotRunning"));
         for(IGameMain game : games){
             if(!game.isGameStarted() || game instanceof All) continue;
             game.stopGame(context.getSource().getServer());
-            info.success("Stopped all games", info.ret + 1);
+            info.success(Text.translatable("lpcminigame.all.gameStopped"), info.ret + 1);
         }
     }
-    @Override public void commandClear(CommandContext<ServerCommandSource> context, runInfo info) {
+    @Override public void commandClear(CommandContext<ServerCommandSource> context, RunInfo info) {
         for(IGameMain game : games)
             game.clearData(context.getSource().getServer());
-        info.success("Cleared all game data");
+        info.success(Text.translatable("lpcminigame.all.gameCleared"));
     }
 }

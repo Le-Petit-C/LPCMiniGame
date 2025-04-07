@@ -6,7 +6,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import lpcminigame.games.all.All;
-import lpcminigame.games.dieOnNaturalBlocks.DieOnNaturalBlocks;
+import lpcminigame.games.dieOnTouchingGround.DieOnTouchingGround;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -26,7 +26,7 @@ public class Main implements ModInitializer, CommandRegistrationCallback {
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	public static final All all = new All();
 	public static final List<IGameMain> games = List.of(
-			new DieOnNaturalBlocks(),
+			new DieOnTouchingGround(),
 			all
 	);
 
@@ -49,22 +49,22 @@ public class Main implements ModInitializer, CommandRegistrationCallback {
 		}
 		dispatcher.register(builder);
 	}
-	public interface Runner { void run(CommandContext<ServerCommandSource> context, runInfo info);}
-	public static class runInfo{
-		public String message = "";
+	public interface Runner { void run(CommandContext<ServerCommandSource> context, RunInfo info);}
+	public static class RunInfo {
+		public Text message = Text.empty();
 		public boolean exception = false;
 		public int ret = 0;
-		public void exception(String message){
+		public void exception(Text message){
 			this.message = message;
 			exception = true;
 			ret = 0;
 		}
-		public void success(String message, int ret){
+		public void success(Text message, int ret){
 			this.message = message;
 			this.ret = ret;
 			exception = false;
 		}
-		public void success(String message){
+		public void success(Text message){
 			success(message, 1);
 		}
 	}
@@ -73,10 +73,10 @@ public class Main implements ModInitializer, CommandRegistrationCallback {
 		public CommandBuilder(String literal) {super(literal);}
 		public CommandBuilder executes(Runner runner){
 			super.executes((context) ->{
-				runInfo info = new runInfo();
+				RunInfo info = new RunInfo();
 				runner.run(context, info);
-				if(info.exception) throw new CommandSyntaxException(null, () -> info.message);
-				else context.getSource().sendFeedback(() -> Text.literal(info.message), true);
+				if(info.exception) throw new CommandSyntaxException(null, () -> info.message.getString());
+				else context.getSource().sendFeedback(() -> info.message, true);
 				return info.ret;
 			});
 			return this;

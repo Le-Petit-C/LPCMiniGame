@@ -1,0 +1,22 @@
+{
+  "lpcminigame.gameAlreadyStarted": "“%s”小游戏已经开始了",
+  "lpcminigame.gameStarted": "开始了“%s”小游戏",
+  "lpcminigame.gameNotRunning": "“%s”小游戏未在运行",
+  "lpcminigame.gameStopped": "停止了“%s”小游戏",
+  "lpcminigame.gameCleared": "清除了“%s”小游戏游戏数据",
+  "lpcminigame.all.gameAlreadyStarted": "所有小游戏都已经在运行了",
+  "lpcminigame.all.gameStarted": "启动了所有小游戏",
+  "lpcminigame.all.gameNotRunning": "没有在运行的小游戏",
+  "lpcminigame.all.gameStopped": "停止了所有小游戏",
+  "lpcminigame.all.gameCleared": "清除了所有小游戏的游戏数据",
+  "lpcminigame.dieOnTouchingGround.gameName": "碰到地面就死",
+  "lpcminigame.dieOnTouchingGround.difficulty.get": "当前难度: %s",
+  "lpcminigame.dieOnTouchingGround.difficulty.already": "游戏难度本来就是“%s”",
+  "lpcminigame.dieOnTouchingGround.difficulty.set": "游戏难度已设为“%s”",
+  "lpcminigame.dieOnTouchingGround.banVehicle.get": "载具禁了吗？: %s",
+  "lpcminigame.dieOnTouchingGround.banVehicle.already": "载具禁止状态本来就是“%s”",
+  "lpcminigame.dieOnTouchingGround.banVehicle.set": "载具禁止状态已设为“%s”",
+  "lpcminigame.dieOnTouchingGround.help":
+    "“碰到地面就死”小游戏说明:\n  游戏规则：\n    开始游戏后，只要踩到了自然生成的方块就会死\n    只有踩在被记录下来的由玩家放置的方块上才不会死\n    游戏未开始时玩家放置的方块不会被计入\n    为了防止无法开始游戏(反复死亡)，设有出生点保护区\n  子命令说明:\n    start:开始游戏\n    stop:暂停游戏\n    banVehicle:设置是否禁用载具\n    difficulty:查看或设置难度(难度详情查看difficulty help)\n    clear:清除这个小游戏的游戏数据\n    help:查看此提示",
+  "lpcminigame.dieOnTouchingGround.difficulty.help": "难度说明:\n  god:最严格的判定，不仅是脚下，任意方向稍微碰到一下就会死\n  strict:较严格的判定，脚踩到一点点自然生成的方块就会死\n  normal:正常难度，判定方块是正下方的方块，但是如果没踩到正下方的方块（比如走在方块边缘，正下方是空气）也会判定被踩到边缘的方块\n  Another-loose:宽松判定1，只有仅踩着自然生成的方块时才会死\n  Dream-loose:经观察认为是Dream原视频使用的判定方式，仅判定脚下的方块，这允许你踩在自然生成的方块边缘而不死（脚下是空气所以判定失败）\n  loosest:结合了上述两种宽松判定的最宽松判定，只有正下方是自然生成的方块并且没有踩到玩家放置的方块才会死"
+}

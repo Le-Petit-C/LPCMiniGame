@@ -4,6 +4,7 @@ import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.text.Text;
 import net.minecraft.util.WorldSavePath;
 
 import java.nio.file.Path;
@@ -25,23 +26,28 @@ public interface IGameMain extends
     default Path getDataDir(MinecraftServer server){
         return server.getSavePath(WorldSavePath.ROOT).resolve(MOD_ID).resolve(getGameId());
     }
-    default void commandRun(CommandContext<ServerCommandSource> context, runInfo info) {
-        if(isGameStarted()) info.exception("Game \"" + getGameId() + "\" already started");
+    default Text getGameName(){
+        return Text.translatable("lpcminigame." + getGameId() + ".gameName");
+    }
+    default void commandRun(CommandContext<ServerCommandSource> context, RunInfo info) {
+        if(isGameStarted())
+            info.exception(Text.translatable("lpcminigame.gameAlreadyStarted", getGameName()));
         else{
             startGame(context.getSource().getServer());
-            info.success("Started game \"" + getGameId() + "\"");
+            info.success(Text.translatable("lpcminigame.gameStarted", getGameName()));
         }
     }
-    default void commandStop(CommandContext<ServerCommandSource> context, runInfo info) {
-        if (!isGameStarted()) info.exception("Game " + getGameId() + " is not running");
+    default void commandStop(CommandContext<ServerCommandSource> context, RunInfo info) {
+        if (!isGameStarted())
+            info.exception(Text.translatable("lpcminigame.gameNotRunning", getGameName()));
         else{
             stopGame(context.getSource().getServer());
-            info.success("Stopped game \"" + getGameId() + "\"");
+            info.success(Text.translatable("lpcminigame.gameStopped", getGameName()));
         }
     }
-    default void commandClear(CommandContext<ServerCommandSource> context, runInfo info) {
+    default void commandClear(CommandContext<ServerCommandSource> context, RunInfo info) {
         clearData(context.getSource().getServer());
-        info.success("Cleared game \"" + getGameId() + "\" data");
+        info.success(Text.translatable("lpcminigame.gameCleared", getGameName()));
     }
     default void buildCommand(CommandBuilder command){
         command.then("start", this::commandRun);

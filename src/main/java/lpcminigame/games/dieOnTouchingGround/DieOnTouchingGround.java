@@ -1,10 +1,11 @@
-package lpcminigame.games.dieOnNaturalBlocks;
+package lpcminigame.games.dieOnTouchingGround;
 
 import com.google.gson.Gson;
 import lpcminigame.IGameMain;
 import net.minecraft.entity.FallingBlockEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -21,7 +22,7 @@ import static lpcminigame.util.BlockUtils.*;
 import static lpcminigame.util.FileUtils.*;
 import static lpcminigame.util.StringUtils.*;
 
-public class DieOnNaturalBlocks implements IGameMain {
+public class DieOnTouchingGround implements IGameMain {
     @Override public void onServerStarted(MinecraftServer server){
         ConfigDataWrapper.readAndLoad(this, server);
     }
@@ -30,7 +31,7 @@ public class DieOnNaturalBlocks implements IGameMain {
         ConfigDataWrapper.wrapAndSave(this, server);
     }
     @Override public boolean isGameStarted(){return events != null;}
-    @Override public String getGameId() {return "dieOnNaturalBlocks";}
+    @Override public String getGameId() {return "dieOnTouchingGround";}
     @Override public void startGame(MinecraftServer server){
         if(isGameStarted()) return;
         events = new Events(this);
@@ -83,17 +84,28 @@ public class DieOnNaturalBlocks implements IGameMain {
     }
     @Override public void buildCommand(CommandBuilder command){
         IGameMain.super.buildCommand(command);
-        CommandBuilder difficultyCommand = new CommandBuilder("difficulty");
-        difficultyCommand.executes((context, info) -> info.success("Current Difficulty: " + difficulty.id));
-        for(Difficulty difficulty : Difficulty.values())
-            difficultyCommand.then(difficulty.id, (context, info) -> commandDifficulty(difficulty, info));
-        command.then(difficultyCommand);
+        command.then(getDifficultyCommand());
+        command.then(getBanVehicleCommand());
+        command.then("help", (context, info)-> info.success(Text.translatable("lpcminigame.dieOnTouchingGround.help")));
+    }
+
+    private @NotNull CommandBuilder getBanVehicleCommand() {
         CommandBuilder banVehicleCommand = new CommandBuilder("banVehicle");
-        banVehicleCommand.executes((context, info) -> info.success("Current banVehicle: " + banVehicle));
+        banVehicleCommand.executes((context, info) -> info.success(Text.translatable("lpcminigame.dieOnTouchingGround.banVehicle.get", String.valueOf(banVehicle))));
         banVehicleCommand.then("true", (context, info) -> commandBanVehicle(true, info));
         banVehicleCommand.then("false", (context, info) -> commandBanVehicle(false, info));
-        command.then(banVehicleCommand);
+        return banVehicleCommand;
     }
+
+    private @NotNull CommandBuilder getDifficultyCommand() {
+        CommandBuilder difficultyCommand = new CommandBuilder("difficulty");
+        difficultyCommand.executes((context, info) -> info.success(Text.translatable("lpcminigame.dieOnTouchingGround.difficulty.get", difficulty.id)));
+        for(Difficulty difficulty : Difficulty.values())
+            difficultyCommand.then(difficulty.id, (context, info) -> commandDifficulty(difficulty, info));
+        difficultyCommand.then("help", (context, info)-> info.success(Text.translatable("lpcminigame.dieOnTouchingGround.difficulty.help")));
+        return difficultyCommand;
+    }
+
     enum Difficulty{
         GOD("god", true, false, false, false),
         STRICT("strict", false, false, false, false),
@@ -123,20 +135,20 @@ public class DieOnNaturalBlocks implements IGameMain {
     }
     Difficulty difficulty = Difficulty.NORMAL;
     boolean banVehicle = false;
-    void commandDifficulty(Difficulty difficulty, runInfo info) {
+    void commandDifficulty(Difficulty difficulty, RunInfo info) {
         if(this.difficulty.equals(difficulty))
-            info.exception("Difficulty is already set to " + difficulty.id);
+            info.exception(Text.translatable("lpcminigame.dieOnTouchingGround.difficulty.already", difficulty.id));
         else{
             this.difficulty = difficulty;
-            info.success("Difficulty now set to " + difficulty.id);
+            info.success(Text.translatable("lpcminigame.dieOnTouchingGround.difficulty.set", difficulty.id));
         }
     }
-    void commandBanVehicle(boolean banVehicle, runInfo info) {
+    void commandBanVehicle(boolean banVehicle, RunInfo info) {
         if(this.banVehicle == banVehicle)
-            info.exception("banVehicle is already set to " + banVehicle);
+            info.exception(Text.translatable("lpcminigame.dieOnTouchingGround.banVehicle.already", String.valueOf(banVehicle)));
         else{
             this.banVehicle = banVehicle;
-            info.success("banVehicle now set to " + banVehicle);
+            info.success(Text.translatable("lpcminigame.dieOnTouchingGround.banVehicle.set", String.valueOf(banVehicle)));
         }
     }
     @NotNull DataMap safePoses = new DataMap();
@@ -216,10 +228,10 @@ public class DieOnNaturalBlocks implements IGameMain {
     private static class ConfigDataWrapper {
         private String difficulty;
         private boolean banVehicle;
-        private static String settingFilePath(DieOnNaturalBlocks game, MinecraftServer server){
+        private static String settingFilePath(DieOnTouchingGround game, MinecraftServer server){
             return String.valueOf(game.getDataDir(server).resolve("config.json"));
         }
-        public static void readAndLoad(DieOnNaturalBlocks game, MinecraftServer server){
+        public static void readAndLoad(DieOnTouchingGround game, MinecraftServer server){
             try {
                 ConfigDataWrapper config = (new Gson())
                         .fromJson(new FileReader(settingFilePath(game, server)), ConfigDataWrapper.class);
@@ -227,7 +239,7 @@ public class DieOnNaturalBlocks implements IGameMain {
                 game.banVehicle = config.banVehicle;
             } catch (FileNotFoundException ignore) {}
         }
-        public static void wrapAndSave(DieOnNaturalBlocks game, MinecraftServer server){Gson gson = new Gson();
+        public static void wrapAndSave(DieOnTouchingGround game, MinecraftServer server){Gson gson = new Gson();
             ConfigDataWrapper wrapper = new ConfigDataWrapper();
             wrapper.difficulty = game.difficulty.id;
             wrapper.banVehicle = game.banVehicle;

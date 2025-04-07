@@ -1,4 +1,4 @@
-package lpcminigame.games.dieOnNaturalBlocks;
+package lpcminigame.games.dieOnTouchingGround;
 
 import lpcminigame.events.*;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
@@ -29,7 +29,7 @@ import java.util.HashMap;
 import java.util.UUID;
 
 import static lpcminigame.util.BlockUtils.*;
-import static lpcminigame.games.dieOnNaturalBlocks.DieOnNaturalBlocks.*;
+import static lpcminigame.games.dieOnTouchingGround.DieOnTouchingGround.*;
 
 public class Events implements
         ServerTickEvents.EndTick,
@@ -40,7 +40,7 @@ public class Events implements
 {
     private static final double expandValue = 0.001;
     private final HashMap<UUID, Double> playerYMaxRecord = new HashMap<>();
-    Events(DieOnNaturalBlocks game){
+    Events(DieOnTouchingGround game){
         this.game = game;
         endTick = UnregistrableServerTickEvents.END_SERVER_TICK.register(this);
         useBlockCallback = UnregistrableUseBlockCallback.EVENT.register(this);
@@ -58,7 +58,7 @@ public class Events implements
     @Override public void onLoad(Entity entity, ServerWorld world) {
         if(entity instanceof FallingBlockEntity block){
             BlockPos pos = block.getBlockPos();
-            DieOnNaturalBlocks.DataClass set = game.safePoses.get(world);
+            DieOnTouchingGround.DataClass set = game.safePoses.get(world);
             if(set == null || !set.contains(pos)) return;
             set.remove(pos);
             game.unnaturalFallingBlocks.computeIfAbsent(world).add(block);
@@ -66,10 +66,10 @@ public class Events implements
     }
     @Override public void onUnload(Entity entity, ServerWorld world) {
         if(entity instanceof FallingBlockEntity block){
-            DieOnNaturalBlocks.FallingBlockSet blockSet = game.unnaturalFallingBlocks.get(world);
+            DieOnTouchingGround.FallingBlockSet blockSet = game.unnaturalFallingBlocks.get(world);
             if(blockSet == null || !blockSet.contains(block)) return;
             blockSet.remove(block);
-            DieOnNaturalBlocks.DataClass data = game.safePoses.computeIfAbsent(world);
+            DieOnTouchingGround.DataClass data = game.safePoses.computeIfAbsent(world);
             if(entity.isRemoved()) data.add(block.getBlockPos());
             else data.addWithoutTest(block.getBlockPos());
         }
@@ -117,7 +117,7 @@ public class Events implements
     @Override public ActionResult interact(PlayerEntity player, World world, Hand hand, BlockHitResult hit) {
         BlockPos pos = hit.getBlockPos();
         if(world instanceof ServerWorld serverWorld){
-            DieOnNaturalBlocks.DataClass set = game.safePoses.computeIfAbsent(serverWorld);
+            DieOnTouchingGround.DataClass set = game.safePoses.computeIfAbsent(serverWorld);
             for(Direction direction : Direction.values()){
                 BlockPos pos1 = pos.offset(direction);
                 if(isEmptyCollisionBlock(world, pos1))
@@ -136,7 +136,7 @@ public class Events implements
         DataClass data = game.safePoses.get(world);
         if(data != null) data.remove(pos);
     }
-    private final DieOnNaturalBlocks game;
+    private final DieOnTouchingGround game;
     private final @NotNull UnregistrableEvent<ServerTickEvents.EndTick> endTick;
     private final @NotNull UnregistrableEvent<UseBlockCallback> useBlockCallback;
     private final @NotNull UnregistrableEvent<ServerEntityEvents.Load> loadEntity;
@@ -146,7 +146,7 @@ public class Events implements
         double nearestDistanceSquare = Double.MAX_VALUE;
         BlockPos directlyDownBlockPos = BlockPos.ofFloored(player.getPos().add(0, -expandValue, 0));
         boolean touchingSafe = false, touchingDangerous = false;
-        DieOnNaturalBlocks.DataClass set = game.safePoses.get(player.getWorld());
+        DieOnTouchingGround.DataClass set = game.safePoses.get(player.getWorld());
         if(set == null) return false;
         for (BlockPos pos : BlockPos.iterate(
                 BlockPos.ofFloored(playerBox.minX, playerBox.minY, playerBox.minZ),
