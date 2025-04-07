@@ -25,6 +25,9 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
+import java.util.UUID;
+
 import static lpcminigame.util.BlockUtils.*;
 import static lpcminigame.games.dieOnNaturalBlocks.DieOnNaturalBlocks.*;
 
@@ -36,6 +39,7 @@ public class Events implements
         PlayerBlockBreakEvents.After
 {
     private static final double expandValue = 0.001;
+    private final HashMap<UUID, Double> playerYMaxRecord = new HashMap<>();
     Events(DieOnNaturalBlocks game){
         this.game = game;
         endTick = UnregistrableServerTickEvents.END_SERVER_TICK.register(this);
@@ -80,14 +84,32 @@ public class Events implements
                 continue;
             }
             Box playerBox = player.getBoundingBox();
+            boolean shouldResetBox;
+            if(player.isOnGround()) shouldResetBox = false;
+            else if(player.getMovement().getY() <= 0 && playerYMaxRecord.containsKey(player.getUuid()))
+                shouldResetBox = playerYMaxRecord.get(player.getUuid()) < playerBox.maxY;
+            else shouldResetBox = false;
+            Box box;
+            if(!shouldResetBox){
+                playerYMaxRecord.put(player.getUuid(), playerBox.maxY);
+                box = playerBox;
+            }
+            else box = new Box(
+                        playerBox.minX,
+                        playerBox.minY,
+                        playerBox.minZ,
+                        playerBox.maxX,
+                        playerYMaxRecord.get(player.getUuid()),
+                        playerBox.maxZ
+                );
             if(game.difficulty.testAllDirections){
-                if(testPlayerWithBox(player, playerBox.expand(expandValue, 0, 0))) continue;
-                if(testPlayerWithBox(player, playerBox.expand(0, 0, expandValue))) continue;
-                testPlayerWithBox(player, playerBox.expand(0, expandValue, 0));
+                if(testPlayerWithBox(player, box.expand(expandValue, 0, 0))) continue;
+                if(testPlayerWithBox(player, box.expand(0, 0, expandValue))) continue;
+                testPlayerWithBox(player, box.expand(0, expandValue, 0));
             }
             else {
-                Box box = new Box(playerBox.getMinPos().add(0, -expandValue, 0), playerBox.getMaxPos());
-                testPlayerWithBox(player, box);
+                Box box1 = new Box(box.getMinPos().add(0, -expandValue, 0), box.getMaxPos());
+                testPlayerWithBox(player, box1);
             }
         }
         game.safePoses.refTest();
